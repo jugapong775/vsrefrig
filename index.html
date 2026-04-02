@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บันทึกการเติมน้ำมัน</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap');
+        body { font-family: 'Prompt', sans-serif; background-color: #f8fafc; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <!-- Admin Login Button -->
+    <div class="fixed bottom-4 right-4 z-40">
+        <button id="admin-login-btn" class="bg-gray-800 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 transition-colors">
+            <i class="fas fa-user-shield"></i>
+        </button>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div id="admin-login-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full mx-4">
+            <h3 class="text-xl font-bold mb-4">เข้าสู่ระบบผู้ดูแล</h3>
+            <input type="password" id="admin-password" placeholder="รหัสผ่าน" class="w-full px-4 py-2 border rounded-lg mb-4 outline-none focus:ring-2 focus:ring-blue-500">
+            <div class="flex gap-2">
+                <button onclick="closeAdminLogin()" class="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">ยกเลิก</button>
+                <button onclick="checkAdminPassword()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">ยืนยัน</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-content" class="max-w-4xl mx-auto">
+        <!-- Toast Notification -->
+        <div id="toast" class="fixed top-4 right-4 z-50 transform translate-y-[-150%] transition-transform duration-300 pointer-events-none">
+            <div class="bg-white border-l-4 border-green-500 shadow-lg rounded-r-lg p-4 flex items-center">
+                <i id="toast-icon" class="fas fa-check-circle text-green-500 mr-3 text-xl"></i>
+                <div>
+                    <p id="toast-title" class="font-bold text-gray-800 text-sm">สำเร็จ</p>
+                    <p id="toast-msg" class="text-gray-600 text-xs">บันทึกข้อมูลเรียบร้อยแล้ว</p>
+                </div>
+            </div>
+        </div>
+
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-blue-600 mb-2">
+                <i class="fas fa-gas-pump mr-2"></i> บันทึกการเติมน้ำมัน
+            </h1>
+            <p class="text-gray-500">ติดตามค่าใช้จ่ายและประสิทธิภาพการใช้เชื้อเพลิง</p>
+            <div id="admin-badge" class="mt-2 hidden">
+                <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">
+                    <i class="fas fa-shield-alt mr-1"></i> โหมดผู้ดูแลระบบ
+                </span>
+                <button onclick="logoutAdmin()" class="ml-2 text-xs text-red-500 hover:underline">ออกจากระบบ</button>
+            </div>
+        </header>
+
+        <!-- Admin Section (Hidden by default) -->
+        <div id="admin-section" class="hidden space-y-8 mb-8">
+            <!-- Advanced Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-700">สถิติแยกตามทะเบียนรถ</h3>
+                    <div id="vehicle-stats" class="space-y-3">
+                        <!-- Stats inserted here -->
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-700">สถิติแยกตามพนักงาน</h3>
+                    <div id="employee-stats" class="space-y-3">
+                        <!-- Stats inserted here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Management -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+                    <h3 class="text-lg font-semibold text-gray-700">จัดการข้อมูลและระบบ</h3>
+                    <div class="flex gap-2">
+                        <button onclick="checkStorageUsage()" class="text-sm bg-blue-100 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-200 transition-colors">
+                            <i class="fas fa-info-circle mr-1"></i> เช็คพื้นที่
+                        </button>
+                        <button onclick="clearAllData()" class="text-sm bg-red-100 text-red-600 px-4 py-2 rounded-lg hover:bg-red-200 transition-colors">
+                            <i class="fas fa-trash-alt mr-1"></i> ล้างข้อมูลทั้งหมด
+                        </button>
+                    </div>
+                </div>
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" id="admin-search" onkeyup="filterAdminTable()" placeholder="ค้นหาตามชื่อพนักงาน หรือ ทะเบียนรถ..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <p class="text-sm text-gray-500 mb-1">รวมค่าใช้จ่ายทั้งหมด</p>
+                <p id="total-cost" class="text-2xl font-bold text-gray-800">฿0.00</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <p class="text-sm text-gray-500 mb-1">รวมจำนวนลิตร</p>
+                <p id="total-liters" class="text-2xl font-bold text-gray-800">0.00 L</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <p class="text-sm text-gray-500 mb-1">เฉลี่ย บาท/ลิตร</p>
+                <p id="avg-price" class="text-2xl font-bold text-gray-800">฿0.00</p>
+            </div>
+        </div>
+
+        <!-- Form Section -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700 flex items-center">
+                <i class="fas fa-edit mr-2 text-blue-500"></i> เพิ่มบันทึกใหม่
+            </h2>
+            <form id="fuel-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <i class="fas fa-clock mr-1.5 text-gray-400"></i> วันและเวลา (อัตโนมัติ)
+                    </label>
+                    <input type="datetime-local" id="date" readonly class="w-full px-3 py-2 border rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed outline-none border-gray-200" title="ระบบลงเวลาให้โดยอัตโนมัติ">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <i class="fas fa-user mr-1.5 text-gray-400"></i> ชื่อพนักงาน / ผู้ใช้รถ
+                    </label>
+                    <input type="text" id="employee-name" placeholder="ระบุชื่อ-นามสกุล" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <i class="fas fa-car mr-1.5 text-gray-400"></i> ทะเบียนรถ
+                    </label>
+                    <input type="text" id="license-plate" placeholder="เช่น กข 1234" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <i class="fas fa-tachometer-alt mr-1.5 text-gray-400"></i> เลขไมล์ (กม.)
+                    </label>
+                    <input type="number" id="odometer" placeholder="0" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <i class="fas fa-tint mr-1.5 text-gray-400"></i> จำนวนลิตร
+                    </label>
+                    <input type="number" step="0.01" id="liters" placeholder="0.00" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <i class="fas fa-baht-sign mr-1.5 text-gray-400"></i> ราคาจ่าย (บาท)
+                    </label>
+                    <input type="number" step="0.01" id="cost" placeholder="0.00" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                </div>
+                <div class="lg:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <i class="fas fa-image mr-1.5 text-gray-400"></i> รูปภาพสลิป (ถ้ามี)
+                    </label>
+                    <input type="file" id="slip-image" accept="image/*" class="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all">
+                </div>
+                <div class="md:col-span-2 lg:col-span-1 mt-2 flex items-end">
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all transform active:scale-[0.98]">
+                        <i class="fas fa-save mr-2"></i> บันทึกข้อมูล
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Table Section -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white">
+                <h2 class="text-xl font-semibold text-gray-700 flex items-center">
+                    <i class="fas fa-list-ul mr-2 text-blue-500"></i> ประวัติการเติมน้ำมัน
+                </h2>
+                <div class="flex gap-2">
+                    <button id="backup-json-btn" class="text-sm bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md transition-all shadow-sm">
+                        <i class="fas fa-file-code mr-1"></i> JSON
+                    </button>
+                    <button id="export-btn" class="text-sm bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-md transition-all shadow-sm">
+                        <i class="fas fa-file-csv mr-1"></i> CSV
+                    </button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 text-gray-500 text-xs uppercase font-medium">
+                        <tr>
+                            <th class="px-6 py-3">วันและเวลา</th>
+                            <th class="px-6 py-3">ผู้ใช้รถ</th>
+                            <th class="px-6 py-3">ทะเบียนรถ</th>
+                            <th class="px-6 py-3">เลขไมล์</th>
+                            <th class="px-6 py-3">ลิตร</th>
+                            <th class="px-6 py-3">ราคา</th>
+                            <th class="px-6 py-3">สลิป</th>
+                            <th class="px-6 py-3">บาท/ลิตร</th>
+                            <th class="px-6 py-3 text-center">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fuel-table-body" class="divide-y divide-gray-100 text-gray-700 text-sm">
+                        <!-- Data will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="empty-state" class="p-12 text-center hidden">
+                <i class="fas fa-history text-gray-300 text-4xl mb-3"></i>
+                <p class="text-gray-400">ยังไม่มีข้อมูลบันทึกในขณะนี้</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="image-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden p-4">
+        <div class="relative max-w-2xl w-full">
+            <button onclick="closeModal()" class="absolute -top-10 right-0 text-white text-2xl hover:text-gray-300">
+                <i class="fas fa-times"></i>
+            </button>
+            <img id="modal-img" src="" alt="Slip Image" class="w-full h-auto rounded-lg shadow-2xl max-h-[80vh] object-contain">
+        </div>
+    </div>
+
+    <script>
+        let fuelRecords = [];
+        try {
+            const savedData = localStorage.getItem('fuelRecords');
+            fuelRecords = savedData ? JSON.parse(savedData) : [];
+            if (!Array.isArray(fuelRecords)) fuelRecords = [];
+            
+            // Data Sanity Check - Clean up corrupted records
+            fuelRecords = fuelRecords.filter(r => r && typeof r === 'object' && r.date && r.licensePlate);
+            console.log('Data initialized, total records:', fuelRecords.length);
+        } catch (e) {
+            console.error('Data initialization error:', e);
+            fuelRecords = [];
+        }
+
+        const form = document.getElementById('fuel-form');
+        const tableBody = document.getElementById('fuel-table-body');
+        const emptyState = document.getElementById('empty-state');
+        const totalCostEl = document.getElementById('total-cost');
+        const totalLitersEl = document.getElementById('total-liters');
+        const avgPriceEl = document.getElementById('avg-price');
+        const imageModal = document.getElementById('image-modal');
+        const modalImg = document.getElementById('modal-img');
+        
+        // Admin Elements
+        const adminLoginModal = document.getElementById('admin-login-modal');
+        const adminSection = document.getElementById('admin-section');
+        const adminBadge = document.getElementById('admin-badge');
+        const adminLoginBtn = document.getElementById('admin-login-btn');
+        const vehicleStatsEl = document.getElementById('vehicle-stats');
+        const employeeStatsEl = document.getElementById('employee-stats');
+        const toast = document.getElementById('toast');
+        const toastIcon = document.getElementById('toast-icon');
+        const toastTitle = document.getElementById('toast-title');
+        const toastMsg = document.getElementById('toast-msg');
+        
+        let isAdmin = sessionStorage.getItem('isAdmin') === 'true';
+
+        // Set default date-time to now
+        function setCurrentDateTime() {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('date').value = now.toISOString().slice(0, 16);
+        }
+        
+        setCurrentDateTime();
+
+        // Toast Helper
+        function showToast(title, message, type = 'success') {
+            toastTitle.textContent = title;
+            toastMsg.textContent = message;
+            
+            const isSuccess = type === 'success';
+            toast.children[0].className = `bg-white border-l-4 ${isSuccess ? 'border-green-500' : 'border-red-500'} shadow-lg rounded-r-lg p-4 flex items-center`;
+            toastIcon.className = `fas ${isSuccess ? 'fa-check-circle text-green-500' : 'fa-exclamation-circle text-red-500'} mr-3 text-xl`;
+            
+            toast.style.transform = 'translateY(0)';
+            setTimeout(() => {
+                toast.style.transform = 'translateY(-150%)';
+            }, 3000);
+        }
+
+        // Admin Auth Functions
+        adminLoginBtn.addEventListener('click', () => {
+            if (isAdmin) {
+                logoutAdmin();
+            } else {
+                adminLoginModal.classList.remove('hidden');
+            }
+        });
+
+        window.closeAdminLogin = () => {
+            adminLoginModal.classList.add('hidden');
+            document.getElementById('admin-password').value = '';
+        };
+
+        window.checkAdminPassword = () => {
+            const pass = document.getElementById('admin-password').value;
+            if (pass === 'admin1234') { // Simple password for demo
+                isAdmin = true;
+                sessionStorage.setItem('isAdmin', 'true');
+                closeAdminLogin();
+                updateUI();
+            } else {
+                alert('รหัสผ่านไม่ถูกต้อง');
+            }
+        };
+
+        window.logoutAdmin = () => {
+            if (confirm('ยืนยันการออกจากระบบผู้ดูแล?')) {
+                isAdmin = false;
+                sessionStorage.removeItem('isAdmin');
+                updateUI();
+            }
+        };
+
+        function updateUI() {
+            tableBody.innerHTML = '';
+            
+            // Toggle Admin View
+            if (isAdmin) {
+                adminSection.classList.remove('hidden');
+                adminBadge.classList.remove('hidden');
+                adminLoginBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i>';
+                adminLoginBtn.classList.replace('bg-gray-800', 'bg-red-500');
+            } else {
+                adminSection.classList.add('hidden');
+                adminBadge.classList.add('hidden');
+                adminLoginBtn.innerHTML = '<i class="fas fa-user-shield"></i>';
+                adminLoginBtn.classList.replace('bg-red-500', 'bg-gray-800');
+            }
+
+            if (fuelRecords.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                
+                // Sort records by date descending
+                const sortedRecords = [...fuelRecords].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                sortedRecords.forEach((record, index) => {
+                    const pricePerLiter = (record.cost / record.liters).toFixed(2);
+                    const slipThumbnail = record.slipImage 
+                        ? `<button onclick="openModal('${record.slipImage}')" class="h-10 w-10 rounded border overflow-hidden hover:opacity-80 transition-opacity">
+                             <img src="${record.slipImage}" class="w-full h-full object-cover">
+                           </button>`
+                        : `<span class="text-gray-300 italic text-xs">ไม่มีรูป</span>`;
+
+                    const deleteBtn = isAdmin 
+                        ? `<button onclick="deleteRecord(${fuelRecords.indexOf(record)})" class="text-red-400 hover:text-red-600 transition-colors">
+                                <i class="fas fa-trash-alt"></i>
+                           </button>`
+                        : `<span class="text-gray-300"><i class="fas fa-lock text-xs"></i></span>`;
+
+                    const row = `
+                        <tr class="hover:bg-gray-50 transition-colors record-row" data-employee="${record.employeeName}" data-license="${record.licensePlate}">
+                            <td class="px-6 py-4 whitespace-nowrap">${new Date(record.date).toLocaleString('th-TH')}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${record.employeeName || '-'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-blue-600">${record.licensePlate}</td>
+                            <td class="px-6 py-4 font-medium">${record.odometer.toLocaleString()} กม.</td>
+                            <td class="px-6 py-4">${record.liters.toLocaleString()} L</td>
+                            <td class="px-6 py-4">฿${record.cost.toLocaleString()}</td>
+                            <td class="px-6 py-4">${slipThumbnail}</td>
+                            <td class="px-6 py-4 text-gray-500">฿${pricePerLiter}</td>
+                            <td class="px-6 py-4 text-center">
+                                ${deleteBtn}
+                            </td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+            }
+
+            calculateStats();
+            if (isAdmin) calculateAdminStats();
+            
+            try {
+                localStorage.setItem('fuelRecords', JSON.stringify(fuelRecords));
+            } catch (e) {
+                console.error('LocalStorage save error:', e);
+                if (e.name === 'QuotaExceededError' || e.code === 22) {
+                    showToast('พื้นที่เต็ม', 'ไม่สามารถบันทึกข้อมูลได้เนื่องจากพื้นที่จัดเก็บเต็ม กรุณาลบข้อมูลเก่าออกบ้าง', 'error');
+                } else {
+                    showToast('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลลงเครื่องได้', 'error');
+                }
+            }
+        }
+
+        function calculateStats() {
+            const totalCost = fuelRecords.reduce((sum, r) => sum + parseFloat(r.cost || 0), 0);
+            const totalLiters = fuelRecords.reduce((sum, r) => sum + parseFloat(r.liters || 0), 0);
+            const avgPrice = totalLiters > 0 ? (totalCost / totalLiters) : 0;
+
+            totalCostEl.textContent = `฿${totalCost.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            totalLitersEl.textContent = `${totalLiters.toLocaleString(undefined, {minimumFractionDigits: 2})} L`;
+            avgPriceEl.textContent = `฿${avgPrice.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+        }
+
+        function calculateAdminStats() {
+            // Stats per Vehicle
+            const vehicles = {};
+            const employees = {};
+
+            fuelRecords.forEach(r => {
+                // Vehicle Stats
+                if (!vehicles[r.licensePlate]) vehicles[r.licensePlate] = { cost: 0, liters: 0 };
+                vehicles[r.licensePlate].cost += parseFloat(r.cost);
+                vehicles[r.licensePlate].liters += parseFloat(r.liters);
+
+                // Employee Stats
+                if (!employees[r.employeeName]) employees[r.employeeName] = { cost: 0, count: 0 };
+                employees[r.employeeName].cost += parseFloat(r.cost);
+                employees[r.employeeName].count += 1;
+            });
+
+            vehicleStatsEl.innerHTML = Object.entries(vehicles).map(([plate, data]) => `
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span class="font-medium text-gray-700">${plate}</span>
+                    <div class="text-right">
+                        <p class="text-sm font-bold text-blue-600">฿${data.cost.toLocaleString()}</p>
+                        <p class="text-xs text-gray-400">${data.liters.toLocaleString()} L</p>
+                    </div>
+                </div>
+            `).join('') || '<p class="text-center text-gray-400 text-sm py-4">ไม่มีข้อมูล</p>';
+
+            employeeStatsEl.innerHTML = Object.entries(employees).map(([name, data]) => `
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span class="font-medium text-gray-700">${name}</span>
+                    <div class="text-right">
+                        <p class="text-sm font-bold text-green-600">฿${data.cost.toLocaleString()}</p>
+                        <p class="text-xs text-gray-400">เติม ${data.count} ครั้ง</p>
+                    </div>
+                </div>
+            `).join('') || '<p class="text-center text-gray-400 text-sm py-4">ไม่มีข้อมูล</p>';
+        }
+
+        window.filterAdminTable = () => {
+            const query = document.getElementById('admin-search').value.toLowerCase();
+            const rows = document.querySelectorAll('.record-row');
+            rows.forEach(row => {
+                const emp = row.getAttribute('data-employee').toLowerCase();
+                const lic = row.getAttribute('data-license').toLowerCase();
+                if (emp.includes(query) || lic.includes(query)) {
+                    row.classList.remove('hidden');
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+        };
+
+        window.clearAllData = () => {
+            if (confirm('คำเตือน: คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลการเติมน้ำมันทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้')) {
+                const pass = prompt('กรุณายืนยันรหัสผ่านเพื่อลบข้อมูลทั้งหมด:');
+                if (pass === 'admin1234') {
+                    fuelRecords = [];
+                    updateUI();
+                    showToast('สำเร็จ', 'ลบข้อมูลทั้งหมดเรียบร้อยแล้ว');
+                } else {
+                    showToast('ผิดพลาด', 'รหัสผ่านไม่ถูกต้อง ข้อมูลไม่ถูกลบ', 'error');
+                }
+            }
+        };
+
+        window.checkStorageUsage = () => {
+            let total = 0;
+            for (let x in localStorage) {
+                if (!localStorage.hasOwnProperty(x)) continue;
+                total += ((localStorage[x].length + x.length) * 2);
+            }
+            const usedMB = (total / (1024 * 1024)).toFixed(2);
+            const limitMB = 5; // Browser standard limit is around 5MB
+            const percent = ((usedMB / limitMB) * 100).toFixed(1);
+            
+            alert(`ข้อมูลที่ใช้ไป: ${usedMB} MB / ${limitMB} MB (${percent}%)\n\nหากพื้นที่ใกล้เต็ม แนะนำให้สำรองข้อมูล (JSON) และล้างข้อมูลเก่าออกครับ`);
+        };
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            console.log('Form submission started');
+            
+            try {
+                const imageFile = document.getElementById('slip-image').files[0];
+                let base64Image = null;
+
+                if (imageFile) {
+                    // Compress image before saving
+                    base64Image = await compressImage(imageFile);
+                }
+
+                const employeeName = document.getElementById('employee-name').value.trim();
+                const licensePlate = document.getElementById('license-plate').value.trim();
+
+                if (!employeeName || !licensePlate) {
+                    showToast('ข้อมูลไม่ครบ', 'กรุณากรอกชื่อพนักงานและทะเบียนรถ', 'error');
+                    return;
+                }
+
+                const newRecord = {
+                    date: document.getElementById('date').value,
+                    employeeName: employeeName,
+                    licensePlate: licensePlate,
+                    odometer: parseInt(document.getElementById('odometer').value) || 0,
+                    liters: parseFloat(document.getElementById('liters').value) || 0,
+                    cost: parseFloat(document.getElementById('cost').value) || 0,
+                    slipImage: base64Image
+                };
+                
+                if (!Array.isArray(fuelRecords)) fuelRecords = [];
+                fuelRecords.push(newRecord);
+                
+                console.log('Pushing new record:', newRecord);
+                updateUI();
+                
+                form.reset();
+                setCurrentDateTime();
+                showToast('สำเร็จ', 'บันทึกข้อมูลการเติมน้ำมันเรียบร้อยแล้ว');
+            } catch (err) {
+                console.error('Submission error detailed:', err);
+                showToast('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้: ' + (err.message || 'Unknown error'), 'error');
+            }
+        });
+
+        // Image Compression Helper
+        async function compressImage(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onerror = () => {
+                        console.error('Image load error, falling back to original');
+                        resolve(event.target.result);
+                    };
+                    img.onload = () => {
+                        try {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width;
+                            let height = img.height;
+                            
+                            // Max dimensions
+                            const MAX_WIDTH = 800;
+                            const MAX_HEIGHT = 800;
+
+                            if (width > height) {
+                                if (width > MAX_WIDTH) {
+                                    height *= MAX_WIDTH / width;
+                                    width = MAX_WIDTH;
+                                }
+                            } else {
+                                if (height > MAX_HEIGHT) {
+                                    width *= MAX_HEIGHT / height;
+                                    height = MAX_HEIGHT;
+                                }
+                            }
+
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+                            
+                            // Compress to JPEG with 0.7 quality
+                            const compressed = canvas.toDataURL('image/jpeg', 0.7);
+                            console.log('Image compressed successfully');
+                            resolve(compressed);
+                        } catch (e) {
+                            console.error('Compression error, falling back to original:', e);
+                            resolve(event.target.result);
+                        }
+                    };
+                };
+                reader.onerror = (e) => {
+                    console.error('FileReader error:', e);
+                    resolve(null);
+                };
+            });
+        }
+
+        window.openModal = (imgSrc) => {
+            modalImg.src = imgSrc;
+            imageModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.closeModal = () => {
+            imageModal.classList.add('hidden');
+            modalImg.src = '';
+            document.body.style.overflow = 'auto';
+        };
+
+        window.deleteRecord = (index) => {
+            if (confirm('คุณต้องการลบบันทึกนี้ใช่หรือไม่?')) {
+                fuelRecords.splice(index, 1);
+                updateUI();
+                showToast('สำเร็จ', 'ลบบันทึกข้อมูลเรียบร้อยแล้ว');
+            }
+        };
+
+        document.getElementById('export-btn').addEventListener('click', () => {
+            if (fuelRecords.length === 0) {
+                alert('ไม่มีข้อมูลให้ส่งออก');
+                return;
+            }
+
+            const headers = ['วันและเวลา', 'ผู้ใช้รถ', 'ทะเบียนรถ', 'เลขไมล์ (กม.)', 'จำนวนลิตร', 'ราคาจ่าย (บาท)'];
+            const rows = fuelRecords.map(r => [new Date(r.date).toLocaleString('th-TH'), r.employeeName || '-', r.licensePlate, r.odometer, r.liters, r.cost]);
+            
+            let csvContent = "\uFEFF"; // BOM for UTF-8 Excel support
+            csvContent += headers.join(",") + "\n";
+            rows.forEach(row => {
+                csvContent += row.join(",") + "\n";
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `บันทึกการเติมน้ำมัน_${new Date().toLocaleString('th-TH').replace(/[/:]/g, '-')}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        // JSON Backup Function
+        document.getElementById('backup-json-btn').addEventListener('click', () => {
+            if (fuelRecords.length === 0) {
+                alert('ไม่มีข้อมูลให้สำรอง');
+                return;
+            }
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fuelRecords, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", `fuel_records_backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        });
+
+        updateUI();
+    </script>
+</body>
+</html>
