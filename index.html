@@ -9,18 +9,46 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap');
         body { font-family: 'Prompt', sans-serif; background-color: #f8fafc; }
+        .login-overlay { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
     </style>
 </head>
 <body class="p-4 md:p-8">
+    <!-- User Login Screen -->
+    <div id="user-login-screen" class="fixed inset-0 z-[60] flex items-center justify-center login-overlay transition-opacity duration-500">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full mx-4">
+            <div class="text-center mb-8">
+                <div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-gas-pump text-blue-600 text-2xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800">เข้าสู่ระบบบันทึกน้ำมัน</h2>
+                <p class="text-gray-500 text-sm mt-1">กรุณาเข้าสู่ระบบเพื่อใช้งาน</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อผู้ใช้งาน (Username)</label>
+                    <input type="text" id="login-username" placeholder="กรอกชื่อผู้ใช้งาน" class="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">รหัสผ่าน</label>
+                    <input type="password" id="login-password" placeholder="••••••••" class="w-full px-4 py-3 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                </div>
+                <button onclick="attemptLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition-all transform active:scale-95">
+                    เข้าสู่ระบบ
+                </button>
+            </div>
+            <p class="text-center text-xs text-gray-400 mt-6">ติดต่อผู้ดูแลระบบหากยังไม่มีบัญชีใช้งาน</p>
+        </div>
+    </div>
+
     <!-- Admin Login Button -->
-    <div class="fixed bottom-4 right-4 z-40">
+    <div id="admin-login-btn-container" class="fixed bottom-4 right-4 z-[70]">
         <button id="admin-login-btn" class="bg-gray-800 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 transition-colors">
             <i class="fas fa-user-shield"></i>
         </button>
     </div>
 
     <!-- Admin Login Modal -->
-    <div id="admin-login-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div id="admin-login-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[80] hidden">
         <div class="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full mx-4">
             <h3 class="text-xl font-bold mb-4">เข้าสู่ระบบผู้ดูแล</h3>
             <input type="password" id="admin-password" placeholder="รหัสผ่าน" class="w-full px-4 py-2 border rounded-lg mb-4 outline-none focus:ring-2 focus:ring-blue-500">
@@ -33,7 +61,7 @@
 
     <div id="main-content" class="max-w-4xl mx-auto">
         <!-- Toast Notification -->
-        <div id="toast" class="fixed top-4 right-4 z-50 transform translate-y-[-150%] transition-transform duration-300 pointer-events-none">
+        <div id="toast" class="fixed top-4 right-4 z-[100] transform translate-y-[-150%] transition-transform duration-300 pointer-events-none">
             <div class="bg-white border-l-4 border-green-500 shadow-lg rounded-r-lg p-4 flex items-center">
                 <i id="toast-icon" class="fas fa-check-circle text-green-500 mr-3 text-xl"></i>
                 <div>
@@ -48,6 +76,14 @@
                 <i class="fas fa-gas-pump mr-2"></i> บันทึกการเติมน้ำมัน
             </h1>
             <p class="text-gray-500">ติดตามค่าใช้จ่ายและประสิทธิภาพการใช้เชื้อเพลิง</p>
+            <div id="user-info-badge" class="mt-4 flex items-center justify-center gap-2">
+                <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium border border-gray-200">
+                    <i class="fas fa-user-circle mr-1"></i> ผู้ใช้งาน: <span id="current-user-name" class="font-bold"></span>
+                </span>
+                <button onclick="logoutUser()" class="text-xs text-red-500 hover:text-red-700 font-medium">
+                    <i class="fas fa-sign-out-alt"></i> ออกจากระบบ
+                </button>
+            </div>
             <div id="admin-badge" class="mt-2 hidden">
                 <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">
                     <i class="fas fa-shield-alt mr-1"></i> โหมดผู้ดูแลระบบ
@@ -82,6 +118,9 @@
                         <button onclick="checkStorageUsage()" class="text-sm bg-blue-100 text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-200 transition-colors">
                             <i class="fas fa-info-circle mr-1"></i> เช็คพื้นที่
                         </button>
+                        <button id="backup-json-btn" class="text-sm bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md transition-all shadow-sm">
+                            <i class="fas fa-file-code mr-1"></i> JSON
+                        </button>
                         <button onclick="clearAllData()" class="text-sm bg-red-100 text-red-600 px-4 py-2 rounded-lg hover:bg-red-200 transition-colors">
                             <i class="fas fa-trash-alt mr-1"></i> ล้างข้อมูลทั้งหมด
                         </button>
@@ -90,6 +129,55 @@
                 <div class="relative">
                     <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                     <input type="text" id="admin-search" onkeyup="filterAdminTable()" placeholder="ค้นหาตามชื่อพนักงาน หรือ ทะเบียนรถ..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+            </div>
+
+            <!-- User Management -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700">จัดการผู้ใช้งาน (User Accounts)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Create User Form -->
+                    <div class="space-y-4">
+                        <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider">สร้างบัญชีผู้ใช้ใหม่</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">ชื่อผู้ใช้ (Username)</label>
+                                <input type="text" id="new-username" placeholder="เช่น somchai_d" class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">ชื่อ-นามสกุล</label>
+                                <input type="text" id="new-fullname" placeholder="เช่น สมชาย ดีใจ" class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">รหัสผ่าน</label>
+                                <input type="password" id="new-password" placeholder="••••••••" class="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <button onclick="createUser()" class="w-full bg-blue-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-user-plus mr-1"></i> สร้างบัญชี
+                            </button>
+                        </div>
+                    </div>
+                    <!-- User List -->
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">รายชื่อผู้ใช้ทั้งหมด</h4>
+                        <div class="overflow-y-auto max-h-[300px]">
+                            <table class="w-full text-sm">
+                                <thead class="text-left text-gray-400 border-b">
+                                     <tr>
+                                         <th class="pb-2 font-medium">ชื่อผู้ใช้</th>
+                                         <th class="pb-2 font-medium">ชื่อ-นามสกุล</th>
+                                         <th class="pb-2 font-medium text-center">จัดการ</th>
+                                     </tr>
+                                 </thead>
+                                <tbody id="user-list-body" class="divide-y divide-gray-50">
+                                    <!-- User rows will be inserted here -->
+                                </tbody>
+                            </table>
+                            <div id="user-empty-state" class="text-center py-8 text-gray-400 hidden">
+                                <p>ยังไม่มีผู้ใช้งานในระบบ</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -126,7 +214,9 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
                         <i class="fas fa-user mr-1.5 text-gray-400"></i> ชื่อพนักงาน / ผู้ใช้รถ
                     </label>
-                    <input type="text" id="employee-name" placeholder="ระบุชื่อ-นามสกุล" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                    <div class="relative">
+                        <input type="text" id="employee-name" placeholder="ระบุชื่อ-นามสกุล" required readonly class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
@@ -142,6 +232,23 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <i class="fas fa-tint mr-1.5 text-gray-400"></i> ประเภทน้ำมัน
+                    </label>
+                    <select id="fuel-type" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                        <option value="">เลือกประเภทน้ำมัน</option>
+                        <option value="เบนซิน">เบนซิน</option>
+                        <option value="แก๊สโซฮอล์ 91">แก๊สโซฮอล์ 91</option>
+                        <option value="แก๊สโซฮอล์ 95">แก๊สโซฮอล์ 95</option>
+                        <option value="E20">E20</option>
+                        <option value="E85">E85</option>
+                        <option value="ดีเซล">ดีเซล</option>
+                        <option value="ดีเซล B7">ดีเซล B7</option>
+                        <option value="ดีเซล B10">ดีเซล B10</option>
+                        <option value="ดีเซลพรีเมียม">ดีเซลพรีเมียม</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
                         <i class="fas fa-tint mr-1.5 text-gray-400"></i> จำนวนลิตร
                     </label>
                     <input type="number" step="0.01" id="liters" placeholder="0.00" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
@@ -152,11 +259,38 @@
                     </label>
                     <input type="number" step="0.01" id="cost" placeholder="0.00" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                 </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <i class="fas fa-money-bill-wave mr-1.5 text-gray-400"></i> วิธีชำระเงิน
+                    </label>
+                    <select id="payment-method" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                        <option value="เงินสด">เงินสด</option>
+                        <option value="บัตรเครดิต">บัตรเครดิต</option>
+                        <option value="อื่นๆ">อื่นๆ</option>
+                    </select>
+                </div>
                 <div class="lg:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
                         <i class="fas fa-image mr-1.5 text-gray-400"></i> รูปภาพสลิป (ถ้ามี)
                     </label>
                     <input type="file" id="slip-image" accept="image/*" class="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm file:mr-4 file:py-1.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-all">
+                </div>
+                <div class="lg:col-span-3">
+                    <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <i class="fas fa-map-marker-alt mr-1.5 text-gray-400"></i> พิกัดจุดเติมน้ำมัน (อัตโนมัติ)
+                    </label>
+                    <div class="flex gap-2">
+                        <input type="text" id="location" readonly placeholder="กำลังรอพิกัด..." class="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 outline-none transition-all">
+                        <button type="button" onclick="getCurrentLocation()" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors" title="ดึงพิกัดใหม่">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="lg:col-span-3">
+                    <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                        <i class="fas fa-comment-alt mr-1.5 text-gray-400"></i> หมายเหตุ (ถ้ามี)
+                    </label>
+                    <textarea id="notes" rows="2" placeholder="เพิ่มหมายเหตุเพิ่มเติม เช่น ปัญหาที่พบ, รายละเอียดการซ่อมบำรุง" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"></textarea>
                 </div>
                 <div class="md:col-span-2 lg:col-span-1 mt-2 flex items-end">
                     <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all transform active:scale-[0.98]">
@@ -173,9 +307,6 @@
                     <i class="fas fa-list-ul mr-2 text-blue-500"></i> ประวัติการเติมน้ำมัน
                 </h2>
                 <div class="flex gap-2">
-                    <button id="backup-json-btn" class="text-sm bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md transition-all shadow-sm">
-                        <i class="fas fa-file-code mr-1"></i> JSON
-                    </button>
                     <button id="export-btn" class="text-sm bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-md transition-all shadow-sm">
                         <i class="fas fa-file-csv mr-1"></i> CSV
                     </button>
@@ -190,8 +321,12 @@
                             <th class="px-6 py-3">ทะเบียนรถ</th>
                             <th class="px-6 py-3">เลขไมล์</th>
                             <th class="px-6 py-3">ลิตร</th>
+                            <th class="px-6 py-3">ประเภทน้ำมัน</th>
                             <th class="px-6 py-3">ราคา</th>
+                            <th class="px-6 py-3">วิธีชำระ</th>
+                            <th class="px-6 py-3">พิกัด</th>
                             <th class="px-6 py-3">สลิป</th>
+                            <th class="px-6 py-3">หมายเหตุ</th>
                             <th class="px-6 py-3">บาท/ลิตร</th>
                             <th class="px-6 py-3 text-center">จัดการ</th>
                         </tr>
@@ -218,19 +353,103 @@
         </div>
     </div>
 
+    <!-- Edit Record Modal -->
+    <div id="edit-record-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[80] hidden p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-auto my-8">
+            <div class="px-6 py-4 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800">แก้ไขบันทึกการเติมน้ำมัน</h3>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="edit-fuel-form" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="hidden" id="edit-index">
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">วันและเวลา</label>
+                    <input type="datetime-local" id="edit-date" required class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ผู้ใช้รถ</label>
+                    <input type="text" id="edit-employee-name" required class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ทะเบียนรถ</label>
+                    <input type="text" id="edit-license-plate" required class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">เลขไมล์ (กม.)</label>
+                    <input type="number" id="edit-odometer" required class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ประเภทน้ำมัน</label>
+                    <select id="edit-fuel-type" required class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="เบนซิน">เบนซิน</option>
+                        <option value="แก๊สโซฮอล์ 91">แก๊สโซฮอล์ 91</option>
+                        <option value="แก๊สโซฮอล์ 95">แก๊สโซฮอล์ 95</option>
+                        <option value="E20">E20</option>
+                        <option value="E85">E85</option>
+                        <option value="ดีเซล">ดีเซล</option>
+                        <option value="ดีเซล B7">ดีเซล B7</option>
+                        <option value="ดีเซล B10">ดีเซล B10</option>
+                        <option value="ดีเซลพรีเมียม">ดีเซลพรีเมียม</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">จำนวนลิตร</label>
+                    <input type="number" step="0.01" id="edit-liters" required class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ราคาจ่าย (บาท)</label>
+                    <input type="number" step="0.01" id="edit-cost" required class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">วิธีชำระเงิน</label>
+                    <select id="edit-payment-method" class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="เงินสด">เงินสด</option>
+                        <option value="บัตรเครดิต">บัตรเครดิต</option>
+                        <option value="อื่นๆ">อื่นๆ</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">พิกัด</label>
+                    <input type="text" id="edit-location" class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">หมายเหตุ</label>
+                    <textarea id="edit-notes" rows="2" class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div class="md:col-span-2 flex gap-3 mt-4">
+                    <button type="button" onclick="closeEditModal()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">ยกเลิก</button>
+                    <button type="submit" class="flex-1 px-4 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 shadow-md transition-colors">บันทึกการแก้ไข</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         let fuelRecords = [];
+        let userAccounts = [];
+        let currentUser = null;
+
         try {
             const savedData = localStorage.getItem('fuelRecords');
             fuelRecords = savedData ? JSON.parse(savedData) : [];
             if (!Array.isArray(fuelRecords)) fuelRecords = [];
             
+            const savedUsers = localStorage.getItem('userAccounts');
+            userAccounts = savedUsers ? JSON.parse(savedUsers) : [];
+            if (!Array.isArray(userAccounts)) userAccounts = [];
+
+            const savedCurrentUser = sessionStorage.getItem('currentUser');
+            currentUser = savedCurrentUser ? JSON.parse(savedCurrentUser) : null;
+
             // Data Sanity Check - Clean up corrupted records
             fuelRecords = fuelRecords.filter(r => r && typeof r === 'object' && r.date && r.licensePlate);
             console.log('Data initialized, total records:', fuelRecords.length);
         } catch (e) {
             console.error('Data initialization error:', e);
             fuelRecords = [];
+            userAccounts = [];
         }
 
         const form = document.getElementById('fuel-form');
@@ -242,11 +461,16 @@
         const imageModal = document.getElementById('image-modal');
         const modalImg = document.getElementById('modal-img');
         
+        // Login/UI Elements
+        const userLoginScreen = document.getElementById('user-login-screen');
+        const currentUserNameEl = document.getElementById('current-user-name');
+        
         // Admin Elements
         const adminLoginModal = document.getElementById('admin-login-modal');
         const adminSection = document.getElementById('admin-section');
         const adminBadge = document.getElementById('admin-badge');
         const adminLoginBtn = document.getElementById('admin-login-btn');
+        const adminLoginBtnContainer = document.getElementById('admin-login-btn-container');
         const vehicleStatsEl = document.getElementById('vehicle-stats');
         const employeeStatsEl = document.getElementById('employee-stats');
         const toast = document.getElementById('toast');
@@ -256,6 +480,72 @@
         
         let isAdmin = sessionStorage.getItem('isAdmin') === 'true';
 
+        // Auth Functions
+        window.attemptLogin = () => {
+            const userInp = document.getElementById('login-username').value.trim();
+            const passInp = document.getElementById('login-password').value.trim();
+
+            if (!userInp || !passInp) {
+                alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+                return;
+            }
+
+            const user = userAccounts.find(u => u.username === userInp && u.password === passInp);
+            
+            if (user) {
+                currentUser = user;
+                sessionStorage.setItem('currentUser', JSON.stringify(user));
+                checkAuth();
+                getCurrentLocation(); // Get location immediately after login
+                showToast('สำเร็จ', `ยินดีต้อนรับคุณ ${user.fullname}`);
+            } else {
+                alert('ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
+            }
+        };
+
+        window.logoutUser = () => {
+            if (confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
+                currentUser = null;
+                sessionStorage.removeItem('currentUser');
+                isAdmin = false;
+                sessionStorage.removeItem('isAdmin');
+                checkAuth();
+            }
+        };
+
+        function checkAuth() {
+            document.body.classList.remove('overflow-hidden'); // Ensure body scroll is enabled by default
+
+            if (isAdmin) {
+                userLoginScreen.classList.add('hidden');
+                document.getElementById('user-info-badge').classList.add('hidden'); // Hide user info badge
+                adminBadge.classList.remove('hidden'); // Show admin badge
+                currentUserNameEl.textContent = "ผู้ดูแลระบบ";
+                adminLoginBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i>'; // Change floating button to logout
+                adminLoginBtn.classList.replace('bg-gray-800', 'bg-red-500');
+                updateUI();
+                return;
+            }
+
+            if (currentUser) {
+                userLoginScreen.classList.add('hidden');
+                document.getElementById('user-info-badge').classList.remove('hidden'); // Show user info badge
+                adminBadge.classList.add('hidden'); // Hide admin badge
+                currentUserNameEl.textContent = currentUser.fullname;
+                document.getElementById('employee-name').value = currentUser.fullname;
+                adminLoginBtn.innerHTML = '<i class="fas fa-user-shield"></i>'; // Change floating button to admin login
+                adminLoginBtn.classList.replace('bg-red-500', 'bg-gray-800');
+                updateUI();
+            } else {
+                userLoginScreen.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden'); // Disable body scroll for login screen
+                document.getElementById('user-info-badge').classList.add('hidden'); // Hide user info badge
+                adminBadge.classList.add('hidden'); // Hide admin badge
+                adminLoginBtn.innerHTML = '<i class="fas fa-user-shield"></i>'; // Change floating button to admin login
+                adminLoginBtn.classList.replace('bg-red-500', 'bg-gray-800');
+            }
+        }
+
         // Set default date-time to now
         function setCurrentDateTime() {
             const now = new Date();
@@ -264,6 +554,36 @@
         }
         
         setCurrentDateTime();
+
+        // Geolocation Function
+        window.getCurrentLocation = () => {
+            const locationInput = document.getElementById('location');
+            if (!navigator.geolocation) {
+                locationInput.value = "เบราว์เซอร์ไม่รองรับ GPS";
+                return;
+            }
+
+            locationInput.value = "กำลังดึงพิกัด...";
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude.toFixed(6);
+                    const lng = position.coords.longitude.toFixed(6);
+                    locationInput.value = `${lat}, ${lng}`;
+                },
+                (error) => {
+                    let msg = "ไม่สามารถดึงพิกัดได้";
+                    if (error.code === 1) msg = "กรุณาอนุญาตการเข้าถึงพิกัด";
+                    locationInput.value = msg;
+                    console.error('Geolocation error:', error);
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        };
+
+        // Call on load
+        if (currentUser && !isAdmin) {
+            getCurrentLocation();
+        }
 
         // Toast Helper
         function showToast(title, message, type = 'success') {
@@ -300,7 +620,7 @@
                 isAdmin = true;
                 sessionStorage.setItem('isAdmin', 'true');
                 closeAdminLogin();
-                updateUI();
+                checkAuth();
             } else {
                 alert('รหัสผ่านไม่ถูกต้อง');
             }
@@ -310,33 +630,35 @@
             if (confirm('ยืนยันการออกจากระบบผู้ดูแล?')) {
                 isAdmin = false;
                 sessionStorage.removeItem('isAdmin');
-                updateUI();
+                checkAuth(); // Call checkAuth to re-evaluate login state
             }
         };
 
         function updateUI() {
             tableBody.innerHTML = '';
             
-            // Toggle Admin View
+            // Always update user list to populate datalist
+            renderUserList();
+
+            // Filter records for non-admins to see only their own data
+            const displayRecords = isAdmin 
+                ? fuelRecords 
+                : (currentUser ? fuelRecords.filter(r => r.employeeName === currentUser.fullname) : []);
+
+            // Toggle Admin Section visibility
             if (isAdmin) {
                 adminSection.classList.remove('hidden');
-                adminBadge.classList.remove('hidden');
-                adminLoginBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i>';
-                adminLoginBtn.classList.replace('bg-gray-800', 'bg-red-500');
             } else {
                 adminSection.classList.add('hidden');
-                adminBadge.classList.add('hidden');
-                adminLoginBtn.innerHTML = '<i class="fas fa-user-shield"></i>';
-                adminLoginBtn.classList.replace('bg-red-500', 'bg-gray-800');
             }
 
-            if (fuelRecords.length === 0) {
+            if (displayRecords.length === 0) {
                 emptyState.classList.remove('hidden');
             } else {
                 emptyState.classList.add('hidden');
                 
-                // Sort records by date descending
-                const sortedRecords = [...fuelRecords].sort((a, b) => new Date(b.date) - new Date(a.date));
+                // Sort filtered records by date descending
+                const sortedRecords = [...displayRecords].sort((a, b) => new Date(b.date) - new Date(a.date));
 
                 sortedRecords.forEach((record, index) => {
                     const pricePerLiter = (record.cost / record.liters).toFixed(2);
@@ -346,8 +668,17 @@
                            </button>`
                         : `<span class="text-gray-300 italic text-xs">ไม่มีรูป</span>`;
 
+                    const locationLink = record.location 
+                        ? `<a href="https://www.google.com/maps?q=${record.location}" target="_blank" class="text-blue-500 hover:text-blue-700 transition-colors" title="ดูแผนที่">
+                             <i class="fas fa-map-marked-alt text-lg"></i>
+                           </a>`
+                        : `<span class="text-gray-300 italic text-xs">ไม่มีพิกัด</span>`;
+
                     const deleteBtn = isAdmin 
-                        ? `<button onclick="deleteRecord(${fuelRecords.indexOf(record)})" class="text-red-400 hover:text-red-600 transition-colors">
+                        ? `<button onclick="editRecord(${fuelRecords.indexOf(record)})" class="text-blue-400 hover:text-blue-600 transition-colors mr-2" title="แก้ไข">
+                                <i class="fas fa-edit"></i>
+                           </button>
+                           <button onclick="deleteRecord(${fuelRecords.indexOf(record)})" class="text-red-400 hover:text-red-600 transition-colors" title="ลบ">
                                 <i class="fas fa-trash-alt"></i>
                            </button>`
                         : `<span class="text-gray-300"><i class="fas fa-lock text-xs"></i></span>`;
@@ -359,8 +690,12 @@
                             <td class="px-6 py-4 whitespace-nowrap font-medium text-blue-600">${record.licensePlate}</td>
                             <td class="px-6 py-4 font-medium">${record.odometer.toLocaleString()} กม.</td>
                             <td class="px-6 py-4">${record.liters.toLocaleString()} L</td>
+                            <td class="px-6 py-4">${record.fuelType || '-'}</td>
                             <td class="px-6 py-4">฿${record.cost.toLocaleString()}</td>
+                            <td class="px-6 py-4">${record.paymentMethod || '-'}</td>
+                            <td class="px-6 py-4 text-center">${locationLink}</td>
                             <td class="px-6 py-4">${slipThumbnail}</td>
+                            <td class="px-6 py-4 whitespace-normal max-w-xs">${record.notes || '-'}</td>
                             <td class="px-6 py-4 text-gray-500">฿${pricePerLiter}</td>
                             <td class="px-6 py-4 text-center">
                                 ${deleteBtn}
@@ -371,7 +706,7 @@
                 });
             }
 
-            calculateStats();
+            calculateStats(displayRecords);
             if (isAdmin) calculateAdminStats();
             
             try {
@@ -386,9 +721,9 @@
             }
         }
 
-        function calculateStats() {
-            const totalCost = fuelRecords.reduce((sum, r) => sum + parseFloat(r.cost || 0), 0);
-            const totalLiters = fuelRecords.reduce((sum, r) => sum + parseFloat(r.liters || 0), 0);
+        function calculateStats(records) {
+            const totalCost = records.reduce((sum, r) => sum + parseFloat(r.cost || 0), 0);
+            const totalLiters = records.reduce((sum, r) => sum + parseFloat(r.liters || 0), 0);
             const avgPrice = totalLiters > 0 ? (totalCost / totalLiters) : 0;
 
             totalCostEl.textContent = `฿${totalCost.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
@@ -471,7 +806,7 @@
             const limitMB = 5; // Browser standard limit is around 5MB
             const percent = ((usedMB / limitMB) * 100).toFixed(1);
             
-            alert(`ข้อมูลที่ใช้ไป: ${usedMB} MB / ${limitMB} MB (${percent}%)\n\nหากพื้นที่ใกล้เต็ม แนะนำให้สำรองข้อมูล (JSON) และล้างข้อมูลเก่าออกครับ`);
+            alert(`ข้อมูลที่ใช้ไป: ${usedMB} MB / ${limitMB} MB (${percent}%)\n\nหากพื้นที่ใกล้เต็ม แนะนำให้สำรองข้อมูล (JSON) และล้างข้อมูลเก่าออกบ้าง`);
         };
 
         form.addEventListener('submit', async (e) => {
@@ -500,8 +835,12 @@
                     employeeName: employeeName,
                     licensePlate: licensePlate,
                     odometer: parseInt(document.getElementById('odometer').value) || 0,
+                    fuelType: document.getElementById('fuel-type').value,
                     liters: parseFloat(document.getElementById('liters').value) || 0,
                     cost: parseFloat(document.getElementById('cost').value) || 0,
+                    paymentMethod: document.getElementById('payment-method').value,
+                    location: document.getElementById('location').value,
+                    notes: document.getElementById('notes').value.trim(),
                     slipImage: base64Image
                 };
                 
@@ -596,14 +935,66 @@
             }
         };
 
+        // Edit Record Functions
+        window.editRecord = (index) => {
+            const record = fuelRecords[index];
+            document.getElementById('edit-index').value = index;
+            document.getElementById('edit-date').value = record.date;
+            document.getElementById('edit-employee-name').value = record.employeeName;
+            document.getElementById('edit-license-plate').value = record.licensePlate;
+            document.getElementById('edit-odometer').value = record.odometer;
+            document.getElementById('edit-fuel-type').value = record.fuelType;
+            document.getElementById('edit-liters').value = record.liters;
+            document.getElementById('edit-cost').value = record.cost;
+            document.getElementById('edit-payment-method').value = record.paymentMethod;
+            document.getElementById('edit-location').value = record.location || '';
+            document.getElementById('edit-notes').value = record.notes || '';
+            
+            document.getElementById('edit-record-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.closeEditModal = () => {
+            document.getElementById('edit-record-modal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        };
+
+        document.getElementById('edit-fuel-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const index = document.getElementById('edit-index').value;
+            
+            fuelRecords[index] = {
+                ...fuelRecords[index],
+                date: document.getElementById('edit-date').value,
+                employeeName: document.getElementById('edit-employee-name').value.trim(),
+                licensePlate: document.getElementById('edit-license-plate').value.trim(),
+                odometer: parseInt(document.getElementById('edit-odometer').value) || 0,
+                fuelType: document.getElementById('edit-fuel-type').value,
+                liters: parseFloat(document.getElementById('edit-liters').value) || 0,
+                cost: parseFloat(document.getElementById('edit-cost').value) || 0,
+                paymentMethod: document.getElementById('edit-payment-method').value,
+                location: document.getElementById('edit-location').value,
+                notes: document.getElementById('edit-notes').value.trim()
+            };
+
+            updateUI();
+            closeEditModal();
+            showToast('สำเร็จ', 'แก้ไขข้อมูลการเติมน้ำมันเรียบร้อยแล้ว');
+        });
+
         document.getElementById('export-btn').addEventListener('click', () => {
-            if (fuelRecords.length === 0) {
+            // Filter records for export based on user role
+            const displayRecords = isAdmin 
+                ? fuelRecords 
+                : (currentUser ? fuelRecords.filter(r => r.employeeName === currentUser.fullname) : []);
+
+            if (displayRecords.length === 0) {
                 alert('ไม่มีข้อมูลให้ส่งออก');
                 return;
             }
 
-            const headers = ['วันและเวลา', 'ผู้ใช้รถ', 'ทะเบียนรถ', 'เลขไมล์ (กม.)', 'จำนวนลิตร', 'ราคาจ่าย (บาท)'];
-            const rows = fuelRecords.map(r => [new Date(r.date).toLocaleString('th-TH'), r.employeeName || '-', r.licensePlate, r.odometer, r.liters, r.cost]);
+            const headers = ['วันและเวลา', 'ผู้ใช้รถ', 'ทะเบียนรถ', 'เลขไมล์ (กม.)', 'ประเภทน้ำมัน', 'จำนวนลิตร', 'ราคาจ่าย (บาท)', 'วิธีชำระเงิน', 'พิกัด', 'หมายเหตุ'];
+            const rows = displayRecords.map(r => [new Date(r.date).toLocaleString('th-TH'), r.employeeName || '-', r.licensePlate, r.odometer, r.fuelType || '-', r.liters, r.cost, r.paymentMethod || '-', r.location || '-', r.notes || '-']);
             
             let csvContent = "\uFEFF"; // BOM for UTF-8 Excel support
             csvContent += headers.join(",") + "\n";
@@ -614,8 +1005,14 @@
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             const url = URL.createObjectURL(blob);
+            
+            const userName = isAdmin ? "ผู้ดูแลระบบ" : (currentUser ? currentUser.fullname : "บุคคลทั่วไป");
+            const now = new Date();
+            const dateStr = `${now.getDate()}-${now.getMonth() + 1}-${now.getFullYear()}`;
+            const fileName = `บันทึกการเติมน้ำมัน_${userName}_${dateStr}.csv`;
+            
             link.setAttribute("href", url);
-            link.setAttribute("download", `บันทึกการเติมน้ำมัน_${new Date().toLocaleString('th-TH').replace(/[/:]/g, '-')}.csv`);
+            link.setAttribute("download", fileName);
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
             link.click();
@@ -637,7 +1034,143 @@
             downloadAnchorNode.remove();
         });
 
+        // User Management Functions
+        window.createUser = () => {
+            const username = document.getElementById('new-username').value.trim();
+            const fullname = document.getElementById('new-fullname').value.trim();
+            const password = document.getElementById('new-password').value.trim();
+
+            if (!username || !fullname || !password) {
+                showToast('ข้อมูลไม่ครบ', 'กรุณากรอกข้อมูลให้ครบทุกช่อง', 'error');
+                return;
+            }
+
+            if (userAccounts.find(u => u.username === username)) {
+                showToast('มีชื่อผู้ใช้นี้แล้ว', 'กรุณาใช้ชื่อผู้ใช้อื่น', 'error');
+                return;
+            }
+
+            const newUser = {
+                id: Date.now().toString(),
+                username,
+                fullname,
+                password,
+                createdAt: new Date().toISOString()
+            };
+
+            userAccounts.push(newUser);
+            saveUsers();
+            renderUserList();
+            
+            // Clear inputs
+            document.getElementById('new-username').value = '';
+            document.getElementById('new-fullname').value = '';
+            document.getElementById('new-password').value = '';
+            
+            showToast('สำเร็จ', `สร้างบัญชีผู้ใช้ ${fullname} เรียบร้อยแล้ว`);
+        };
+
+        window.deleteUser = (id) => {
+            const user = userAccounts.find(u => u.id === id);
+            if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบบัญชีผู้ใช้ ${user.fullname}?`)) {
+                userAccounts = userAccounts.filter(u => u.id !== id);
+                saveUsers();
+                renderUserList();
+                showToast('สำเร็จ', 'ลบบัญชีผู้ใช้เรียบร้อยแล้ว');
+            }
+        };
+
+        window.editUserPassword = (id) => {
+            const user = userAccounts.find(u => u.id === id);
+            const newPass = prompt(`กรุณากรอกรหัสผ่านใหม่สำหรับ ${user.fullname}:`, user.password);
+            
+            if (newPass !== null && newPass.trim() !== '') {
+                user.password = newPass.trim();
+                saveUsers();
+                renderUserList();
+                showToast('สำเร็จ', `แก้ไขรหัสผ่านของ ${user.fullname} เรียบร้อยแล้ว`);
+            }
+        };
+
+        window.editUserProfile = (id) => {
+            const user = userAccounts.find(u => u.id === id);
+            const newUsername = prompt(`แก้ไขชื่อผู้ใช้ (Username) สำหรับ ${user.fullname}:`, user.username);
+            
+            if (newUsername === null) return; // Cancel
+            
+            const newFullname = prompt(`แก้ไขชื่อ-นามสกุล สำหรับ ${user.username}:`, user.fullname);
+            
+            if (newFullname === null) return; // Cancel
+
+            const trimmedUsername = newUsername.trim();
+            const trimmedFullname = newFullname.trim();
+
+            if (!trimmedUsername || !trimmedFullname) {
+                showToast('ข้อมูลไม่ครบ', 'ชื่อผู้ใช้และชื่อ-นามสกุลห้ามว่าง', 'error');
+                return;
+            }
+
+            // Check if new username exists for other users
+            if (trimmedUsername !== user.username && userAccounts.find(u => u.username === trimmedUsername)) {
+                showToast('มีชื่อผู้ใช้นี้แล้ว', 'กรุณาใช้ชื่อผู้ใช้อื่น', 'error');
+                return;
+            }
+
+            user.username = trimmedUsername;
+            user.fullname = trimmedFullname;
+            
+            saveUsers();
+            renderUserList();
+            showToast('สำเร็จ', `แก้ไขข้อมูลของ ${trimmedFullname} เรียบร้อยแล้ว`);
+        };
+
+        function renderUserList() {
+            const userListBody = document.getElementById('user-list-body');
+            const userEmptyState = document.getElementById('user-empty-state');
+            
+            if (!userListBody) return;
+
+            userListBody.innerHTML = '';
+            
+            if (userAccounts.length === 0) {
+                userEmptyState.classList.remove('hidden');
+            } else {
+                userEmptyState.classList.add('hidden');
+                userAccounts.forEach(user => {
+                    // Update Table
+                    const row = `
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="py-3 font-medium">${user.username}</td>
+                            <td class="py-3 text-gray-600">${user.fullname}</td>
+                            <td class="py-3 text-center flex justify-center gap-2">
+                                <button onclick="editUserProfile('${user.id}')" class="text-green-400 hover:text-green-600 transition-colors" title="แก้ไขข้อมูลพื้นฐาน">
+                                    <i class="fas fa-user-edit"></i>
+                                </button>
+                                <button onclick="editUserPassword('${user.id}')" class="text-blue-400 hover:text-blue-600 transition-colors" title="แก้ไขรหัสผ่าน">
+                                    <i class="fas fa-key"></i>
+                                </button>
+                                <button onclick="deleteUser('${user.id}')" class="text-red-400 hover:text-red-600 transition-colors" title="ลบผู้ใช้">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    userListBody.innerHTML += row;
+                });
+            }
+        }
+
+        function saveUsers() {
+            try {
+                localStorage.setItem('userAccounts', JSON.stringify(userAccounts));
+            } catch (e) {
+                console.error('LocalStorage user save error:', e);
+                showToast('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลผู้ใช้ได้', 'error');
+            }
+        }
+
         updateUI();
-    </script>
-</body>
+         checkAuth();
+     </script>
+ </body>
 </html>
